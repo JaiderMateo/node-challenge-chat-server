@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const { response, request } = require("express");
 
 const app = express();
 
@@ -26,6 +27,15 @@ app.get("/messages", (request, response)=>{ //return all messages
   response.send(messages);
 })
 
+app.get("/messages/search", (request, response)=>{
+  response.send(messages.find(i=> i.text.toLowerCase().includes(request.query.text) ))
+})
+
+app.get("/messages/latest", (request, response)=>{
+  let max = Math.max(...messages.map(i=>i.id)) - 10 
+  response.send(messages.filter(i=> i.id > max ))
+})
+
 app.get("/messages/:id", (request, response)=>{ //get one message by id
   let id = parseInt(request.params.id);
   response.send(messages.find(i=>i.id == id));
@@ -33,10 +43,14 @@ app.get("/messages/:id", (request, response)=>{ //get one message by id
 
 app.post("/messages", (request, response)=>{ //create a new message 
   let message = request.body;
-  id = Math.max(messages.map(i=>i.id)) + 1;
-  message.id = id;
-  messages.push(message);
-  response.send(messages);
+  if(message.text && message.from){
+    let id = Math.max(...messages.map(i=>i.id)) + 1;
+    message.id = id;
+    messages.push(message);
+    response.send(messages);
+  }else{
+    response.status(400).send("some parameter is missing")
+  }
 })
 
 app.delete("/messages/:id", (request, response)=>{//deledte a message by id
